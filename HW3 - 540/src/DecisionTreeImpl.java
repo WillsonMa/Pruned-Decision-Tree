@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,11 +13,15 @@ import java.util.Map;
  * See DecisionTree for a description of default methods.
  */
 public class DecisionTreeImpl extends DecisionTree {
+	
   private DecTreeNode root;
+  
   //ordered list of class labels
   private List<String> labels; 
+  
   //ordered list of attributes
   private List<String> attributes; 
+  
   //map to ordered discrete values taken by attributes
   private Map<String, List<String>> attributeValues; 
   
@@ -38,6 +43,73 @@ public class DecisionTreeImpl extends DecisionTree {
     this.attributes = train.attributes;
     this.attributeValues = train.attributeValues;
     // TODO: add code here
+    
+    String majorityLabel = MajorityLabel(train);
+    this.root = BuildTree(train, train.attributes, majorityLabel);
+   
+  }
+  
+  String MajorityLabel(DataSet tree){
+	  
+	  Map<String, Integer> map = new HashMap<String, Integer>();
+	  for (String label : tree.labels){
+		  Integer freq = map.get(label);
+		  map.put(label, (freq == null) ? 1 : freq + 1);
+	  }
+	  
+	  int max = -1;
+	  String mostFrequent = null;
+	  for(Map.Entry<String, Integer> labelEntry: map.entrySet()){
+		  if(labelEntry.getValue() > max){
+			  mostFrequent = labelEntry.getKey();
+			  max = labelEntry.getValue();
+		  }
+	  }
+	  return mostFrequent;
+  }
+  
+  int InformationGain(List<String> attributes, List<Instance> instances){
+	  // Calculate H(class)
+	  
+	return 1;  
+  }
+  
+  DecTreeNode BuildTree(DataSet childTree, List<String> attributes, String defaultLabel){
+	  
+	  //test for all same classification
+	    String x = "begin";
+	    boolean sameLabel = true;
+	    for(String check: labels){
+	    	if(!x.contentEquals("begin")){
+	    		if(check != x){
+	    			sameLabel = false;
+	    		}
+	    	}
+	    	x = check;
+	    }
+	    
+	    if(childTree.instances.isEmpty()){
+	    	// return terminal node with plurality value of parent example labels
+	    	return new DecTreeNode(defaultLabel, null, null, true);
+	    }else if(sameLabel){
+	    	// return terminal node with label shared by all examples in tree
+	    	return new DecTreeNode(labels.get(0), null, null, true);
+	    }else if(attributes.isEmpty()){
+	    	// return terminal node with plurality value of current example labels
+	    	return new DecTreeNode(MajorityLabel(childTree), null, null, true);
+	    }else{
+	    	// A = argmax for attribute a of IMPORTANCE(a, examples)
+	    	int importantAttribute = 
+	    	// calculate majorityLabel
+	    	
+	    	// tree = new decision tree with root node A
+	    	DecTreeNode treeToReturn = 
+	    	// create subtrees for each attribute value
+	    	
+	    	//
+	    	return treeToReturn;
+	    }
+	    
   }
 
   /**
@@ -52,12 +124,15 @@ public class DecisionTreeImpl extends DecisionTree {
     this.attributes = train.attributes;
     this.attributeValues = train.attributeValues;
     // TODO: add code here
+    
   }
 
   @Override
   public String classify(Instance instance) {
 
     // TODO: add code here
+	  
+	return "TODO";
   }
 
   @Override
@@ -66,6 +141,7 @@ public class DecisionTreeImpl extends DecisionTree {
     this.attributes = train.attributes;
     this.attributeValues = train.attributeValues;
     // TODO: add code here
+    
   }
   
   @Override
