@@ -71,7 +71,7 @@ public class DecisionTreeImpl extends DecisionTree {
 		return mostFrequent;
 	}
 
-	Map<String, Double> InformationGain(List<Instance> examples){
+	Map<LabelAttributeValuePair, Double> InformationGain(List<Instance> examples){
 
 
 		// get frequency of all labels (R, L, B)
@@ -82,7 +82,7 @@ public class DecisionTreeImpl extends DecisionTree {
 			labelFreqMap.put(example.label, (freq == null) ? 1 : freq + 1);
 		}
 
-		// Calculate H(label)
+		// Calculate H(label): H(Y)
 		Map<String, Double> HLabelMap = new HashMap<String, Double>();
 
 		for(Map.Entry<String, Integer> labelEntry: labelFreqMap.entrySet()){
@@ -120,25 +120,42 @@ public class DecisionTreeImpl extends DecisionTree {
 		}
 
 		// Calculate H(Label | AttributeValue): H(Y | X = v) = Sum of -Pr(Y = yi | X = v)log2(Pr(Y = yi | X = v))
-		Map<LabelAttributeValuePair, Double> HLabelAttributeMap = new HashMap<LabelAttributeValuePair, Double>();
+		Map<LabelAttributeValuePair, Double> HLabelAttributeValueMap = new HashMap<LabelAttributeValuePair, Double>();
 
-		for(Map.Entry<LabelAttributeValuePair, Integer> labelAttributeEntry: labelAttributeFreqMap.entrySet()){
-			double probOfYiGivenXv = labelAttributeEntry.getValue()/attributeValueFreqMap.get(labelAttributeEntry.getKey().getAttribute());
+		for(Map.Entry<LabelAttributeValuePair, Integer> labelAttributeValueEntry: labelAttributeFreqMap.entrySet()){
+			double probOfYiGivenXv = labelAttributeValueEntry.getValue()/attributeValueFreqMap.get(labelAttributeValueEntry.getKey().getAttribute());
 			double currHClass = (-probOfYiGivenXv)*Math.log(probOfYiGivenXv)/Math.log(2);
-			double HClassSum = HLabelMap.get(labelAttributeEntry.getKey());
-			HLabelAttributeMap.put(labelAttributeEntry.getKey(), (HClassSum + currHClass));
+			double HClassSum = HLabelAttributeValueMap.get(labelAttributeValueEntry.getKey());
+			HLabelAttributeValueMap.put(labelAttributeValueEntry.getKey(), (HClassSum + currHClass));
 
 		}
 
 		
 
 		// Calculate H(Label | Attribute): H(Y | X) = Sum of Pr(X = vi)*H(Y | X = vi)
+		Map<LabelAttributeValuePair, Double> HLabelAttributeMap = new HashMap<LabelAttributeValuePair, Double>();
+		
+		for(Map.Entry<LabelAttributeValuePair, Double> labelAttributeEntry: HLabelAttributeValueMap.entrySet()){
+			double probXvi = attributeValueFreqMap.get(labelAttributeEntry.getKey().getAttribute())/examples.size();
+			double currHClass = probXvi*labelAttributeEntry.getValue();
+			double HClassSum = HLabelAttributeMap.get(labelAttributeEntry.getKey());
+			HLabelAttributeMap.put(labelAttributeEntry.getKey(), (HClassSum + currHClass));
+
+		}
 		
 		
 		
 		// Calculate Information Gain: I(Y ; X) = H(Y) - H(Y | X)
 
-		return "TODOSTRING";  
+		Map<LabelAttributeValuePair, Double> IGMap = new HashMap<LabelAttributeValuePair, Double>();
+		
+		for(Map.Entry<LabelAttributeValuePair, Double> labelAttributeEntry: HLabelAttributeValueMap.entrySet()){
+
+			IGMap.put(labelAttributeEntry.getKey(), (HLabelMap.get(labelAttributeEntry.getKey().getLabel()) - labelAttributeEntry.getValue()) );
+
+		}
+		
+		return IGMap;  
 	}
 
 	DecTreeNode BuildTree(List<Instance> examples, List<String> attributes, String defaultLabel){
@@ -170,13 +187,13 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		}else{
 			// importantAttribute = argmax for attribute a of IMPORTANCE(a, examples),
-			Map<String, Double> IGMap = InformationGain(examples);
+			Map<LabelAttributeValuePair, Double> IGMap = InformationGain(examples);
 
 			double max = -1;
 			String importantAttribute = null;
-			for(Map.Entry<String, Double> IGEntry: IGMap.entrySet()){
+			for(Map.Entry<LabelAttributeValuePair, Double> IGEntry: IGMap.entrySet()){
 				if(IGEntry.getValue() > max){
-					importantAttribute = IGEntry.getKey();
+					importantAttribute = IGEntry.getKey().getAttribute();
 					max = IGEntry.getValue();
 				}
 			}
@@ -257,10 +274,10 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.attributeValues = train.attributeValues;
 		// TODO: add code here
 
-		Map<String, Double> IGMap = InformationGain(train.instances);
+		Map<LabelAttributeValuePair, Double> IGMap = InformationGain(train.instances);
 
-		for(Map.Entry<String, Double> IGEntry: IGMap.entrySet()){
-			System.out.format("%s %.5f\n", IGEntry.getKey(), IGEntry.getValue());
+		for(Map.Entry<LabelAttributeValuePair, Double> IGEntry: IGMap.entrySet()){
+			System.out.format("%s %.5f\n", IGEntry.getKey().getAttribute(), IGEntry.getValue());
 		}
 
 
