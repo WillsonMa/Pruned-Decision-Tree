@@ -78,8 +78,8 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		Map<String, Integer> labelFreqMap = new HashMap<String, Integer>();
 		for(Instance example: examples){
-				Integer freq = labelFreqMap.get(example.label);
-				labelFreqMap.put(example.label, (freq == null) ? 1 : freq + 1);
+			Integer freq = labelFreqMap.get(example.label);
+			labelFreqMap.put(example.label, (freq == null) ? 1 : freq + 1);
 		}
 
 		// Calculate H(label)
@@ -87,19 +87,57 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		for(Map.Entry<String, Integer> labelEntry: labelFreqMap.entrySet()){
 			double currHClass = (-labelEntry.getValue()/labelFreqMap.size())*Math.log(labelEntry.getValue()/labelFreqMap.size())/Math.log(2);
-			double HClassSum = HLabelMap.get(labelEntry.getValue());
+			double HClassSum = HLabelMap.get(labelEntry.getKey());
 			HLabelMap.put(labelEntry.getKey(), (HClassSum + currHClass));
-			
+
+		}
+
+
+		// Get freq of labels given attributes: Pr(Y = yi | X = v)
+		Map<LabelAttributeValuePair, Integer> labelAttributeFreqMap = new HashMap<LabelAttributeValuePair, Integer>();
+
+		for(String label : labels){
+			for(String attribute: attributes){
+				for(Instance example: examples){
+					if(example.label.equals(label) && example.attributes.contains(attribute)){
+						LabelAttributeValuePair toHash = new LabelAttributeValuePair(label, attribute);
+
+						Integer freq = labelAttributeFreqMap.get(toHash);
+						labelAttributeFreqMap.put(toHash, (freq == null) ? 1 : freq + 1);
+					}	
+				}
+			}
+		}
+
+		// Get freq of attributeValue  
+
+		Map<String, Integer> attributeValueFreqMap = new HashMap<String, Integer>();
+		for(Instance example: examples){
+			for(String attribute: example.attributes){
+				Integer freq = attributeValueFreqMap.get(attribute);
+				labelFreqMap.put(attribute, (freq == null) ? 1 : freq + 1);
+			}
+		}
+
+		// Calculate H(Label | AttributeValue): H(Y | X = v) = Sum of -Pr(Y = yi | X = v)log2(Pr(Y = yi | X = v))
+		Map<LabelAttributeValuePair, Double> HLabelAttributeMap = new HashMap<LabelAttributeValuePair, Double>();
+
+		for(Map.Entry<LabelAttributeValuePair, Integer> labelAttributeEntry: labelAttributeFreqMap.entrySet()){
+			double probOfYiGivenXv = labelAttributeEntry.getValue()/attributeValueFreqMap.get(labelAttributeEntry.getKey().getAttribute());
+			double currHClass = (-probOfYiGivenXv)*Math.log(probOfYiGivenXv)/Math.log(2);
+			double HClassSum = HLabelMap.get(labelAttributeEntry.getKey());
+			HLabelAttributeMap.put(labelAttributeEntry.getKey(), (HClassSum + currHClass));
+
 		}
 
 		
-		// Calculate H(Label | AttributeValue): H(Y | X = v) = Sum of -Pr(Y = yi | X = v)log2(Pr(Y = yi | X = v))
 
+		// Calculate H(Label | Attribute): H(Y | X) = Sum of Pr(X = vi)*H(Y | X = vi)
 		
-		// Calculate H(Label | Attribute): H(Y | X) = Sum of Pr(X = v)*H(Y | X = vi)
-
+		
+		
 		// Calculate Information Gain: I(Y ; X) = H(Y) - H(Y | X)
-		
+
 		return "TODOSTRING";  
 	}
 
