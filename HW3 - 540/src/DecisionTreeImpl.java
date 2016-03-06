@@ -74,34 +74,32 @@ public class DecisionTreeImpl extends DecisionTree {
 	Map<String, Double> InformationGain(List<Instance> examples){
 
 
-		// get frequency of all attribute values (1 R, 2 G, 4 B) etc
+		// get frequency of all labels (R, L, B)
 
-		Map<String, Integer> map = new HashMap<String, Integer>();
-		for(String attribute : attributes){
-			for(String value : attributeValues.get(attribute)){
-				Integer freq = map.get(value);
-				map.put(value, (freq == null) ? 1 : freq + 1);
-			}
+		Map<String, Integer> labelFreqMap = new HashMap<String, Integer>();
+		for(Instance example: examples){
+				Integer freq = labelFreqMap.get(example.label);
+				labelFreqMap.put(example.label, (freq == null) ? 1 : freq + 1);
 		}
 
-		// Calculate H(attribute)
-		Map<String, Double> HClassMap = new HashMap<String, Double>();
+		// Calculate H(label)
+		Map<String, Double> HLabelMap = new HashMap<String, Double>();
 
-		for(String attribute : attributes){
-			for(String value : attributeValues.get(attribute)){
-				double currHClass = (-map.get(value)/attributeValues.size())*Math.log(map.get(value)/attributeValues.size())/Math.log(2);
-				double HClassSum = HClassMap.get(attribute);
-				HClassMap.put(attribute, (HClassSum + currHClass));
-			}
-
+		for(Map.Entry<String, Integer> labelEntry: labelFreqMap.entrySet()){
+			double currHClass = (-labelEntry.getValue()/labelFreqMap.size())*Math.log(labelEntry.getValue()/labelFreqMap.size())/Math.log(2);
+			double HClassSum = HLabelMap.get(labelEntry.getValue());
+			HLabelMap.put(labelEntry.getKey(), (HClassSum + currHClass));
+			
 		}
 
-		// Calculate H(Attribute | Other Attribute's Value): H(Y|X=v)
+		
+		// Calculate H(Label | AttributeValue): H(Y | X = v) = Sum of -Pr(Y = yi | X = v)log2(Pr(Y = yi | X = v))
 
-		// Calculate H(Attribute | Other Attribute): H(Y | X)
+		
+		// Calculate H(Label | Attribute): H(Y | X) = Sum of Pr(X = v)*H(Y | X = vi)
 
-		// Calculate Information Gain(Y ; X)
-
+		// Calculate Information Gain: I(Y ; X) = H(Y) - H(Y | X)
+		
 		return "TODOSTRING";  
 	}
 
