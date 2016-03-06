@@ -87,8 +87,10 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		for(Map.Entry<String, Integer> labelEntry: labelFreqMap.entrySet()){
 			double currHClass = (-labelEntry.getValue()/labelFreqMap.size())*Math.log(labelEntry.getValue()/labelFreqMap.size())/Math.log(2);
-			double HClassSum = HLabelMap.get(labelEntry.getKey());
-			HLabelMap.put(labelEntry.getKey(), (HClassSum + currHClass));
+			double HClassSum = (HLabelMap.get(labelEntry.getKey()) == null) ? 0 : HLabelMap.get(labelEntry.getKey());
+			HLabelMap.put(
+					labelEntry.getKey(),
+					(HClassSum + currHClass));
 
 		}
 
@@ -205,30 +207,32 @@ public class DecisionTreeImpl extends DecisionTree {
 			DecTreeNode treeToReturn = new DecTreeNode(majorityLabel, importantAttribute, null, false);
 
 			// create subtrees for each attribute value
-			for(String value : attributeValues.get(importantAttribute)){
-
-				// Get subset of examples with importantAttribute == value
-				List<Instance> exs = new ArrayList<Instance>();
-				for(Instance example: examples){
-					for(String exampleValue : example.attributes){
-						if(exampleValue.equals(value)){
-							exs.add(example);
-							break;
+			if(attributeValues.get(importantAttribute) != null){
+				for(String value : attributeValues.get(importantAttribute)){
+	
+					// Get subset of examples with importantAttribute == value
+					List<Instance> exs = new ArrayList<Instance>();
+					for(Instance example: examples){
+						for(String exampleValue : example.attributes){
+							if(exampleValue.equals(value)){
+								exs.add(example);
+								break;
+							}
 						}
 					}
+	
+					// Pass attributes minus the one being used to create children
+					List<String> childAttributes = attributes;
+					childAttributes.remove(importantAttribute);
+	
+					// Build subtree
+					DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel);
+	
+					// Add arc from tree to subtree
+					treeToReturn.addChild(childTree);
 				}
-
-				// Pass attributes minus the one being used to create children
-				List<String> childAttributes = attributes;
-				childAttributes.remove(importantAttribute);
-
-				// Build subtree
-				DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel);
-
-				// Add arc from tree to subtree
-				treeToReturn.addChild(childTree);
+				//
 			}
-			//
 			return treeToReturn;
 		}
 
