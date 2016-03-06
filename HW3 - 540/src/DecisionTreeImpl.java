@@ -68,13 +68,44 @@ public class DecisionTreeImpl extends DecisionTree {
 	  return mostFrequent;
   }
   
-  int InformationGain(List<String> attributes, List<Instance> instances){
-	  // Calculate H(class)
+  String InformationGain(DataSet tree){
 	  
-	return 1;  
+	  
+	  // get frequency of all attribute values (1 R, 2 G, 4 B) etc
+	  
+	  Map<String, Integer> map = new HashMap<String, Integer>();
+	  for(String attribute : tree.attributes){
+		  for(String value : tree.attributeValues.get(attribute)){
+			  Integer freq = map.get(value);
+			  map.put(value, (freq == null) ? 1 : freq + 1);
+		  }
+	  }
+	  
+
+	  
+	  
+	// Calculate H(attribute)
+	Map<String, Double> HClassMap = new HashMap<String, Double>();
+	
+	for(String attribute : attributes){
+		for(String value : tree.attributeValues.get(attribute)){
+			double currHClass = (-map.get(value)/tree.attributeValues.size())*Math.log(map.get(value)/tree.attributeValues.size())/Math.log(2);
+			double HClassSum = HClassMap.get(attribute);
+			HClassMap.put(attribute, (HClassSum + currHClass));
+		}
+
+	}
+	
+	// Calculate H(Attribute | Other Attribute's Value): H(Y|X=v)
+	
+	// Calculate H(Attribute | Other Attribute): H(Y | X)
+	
+	// Calculate Information Gain(Y ; X)
+	
+	return "TODOSTRING";  
   }
   
-  DecTreeNode BuildTree(DataSet childTree, List<String> attributes, String defaultLabel){
+  DecTreeNode BuildTree(DataSet tree, List<String> attributes, String defaultLabel){
 	  
 	  //test for all same classification
 	    String x = "begin";
@@ -88,7 +119,7 @@ public class DecisionTreeImpl extends DecisionTree {
 	    	x = check;
 	    }
 	    
-	    if(childTree.instances.isEmpty()){
+	    if(tree.instances.isEmpty()){
 	    	// return terminal node with plurality value of parent example labels
 	    	return new DecTreeNode(defaultLabel, null, null, true);
 	    }else if(sameLabel){
@@ -96,16 +127,19 @@ public class DecisionTreeImpl extends DecisionTree {
 	    	return new DecTreeNode(labels.get(0), null, null, true);
 	    }else if(attributes.isEmpty()){
 	    	// return terminal node with plurality value of current example labels
-	    	return new DecTreeNode(MajorityLabel(childTree), null, null, true);
+	    	return new DecTreeNode(MajorityLabel(tree), null, null, true);
 	    }else{
 	    	// A = argmax for attribute a of IMPORTANCE(a, examples)
-	    	int importantAttribute = 
+	    	String importantAttribute = InformationGain(tree);
 	    	// calculate majorityLabel
-	    	
+	    	String majorityLabel = MajorityLabel(tree);
 	    	// tree = new decision tree with root node A
-	    	DecTreeNode treeToReturn = 
+	    	DecTreeNode treeToReturn = new DecTreeNode(null, importantAttribute, null, false);
 	    	// create subtrees for each attribute value
-	    	
+	    	for(String value : tree.attributeValues.get(importantAttribute)){
+	    		DecTreeNode childTree = BuildTree(TODO);
+	    		treeToReturn.addChild(childTree);
+	    	}
 	    	//
 	    	return treeToReturn;
 	    }
