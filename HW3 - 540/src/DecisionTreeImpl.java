@@ -209,7 +209,6 @@ public class DecisionTreeImpl extends DecisionTree {
 					traversalNode = child;
 					break;
 				}
-
 			}
 		}
 		return traversalNode.label;
@@ -225,9 +224,7 @@ public class DecisionTreeImpl extends DecisionTree {
 		Map<String, Double> IGMap = InformationGain(train.instances);
 
 		for(Map.Entry<String, Double> IGEntry: IGMap.entrySet()){
-			System.out.print(IGEntry.getKey() + " ");
-			System.out.format("%.5f\n", IGEntry.getValue());
-			IGEntry.getValue();
+			System.out.format("%s %.5f\n", IGEntry.getKey(), IGEntry.getValue());
 		}
 
 
