@@ -191,7 +191,7 @@ public class DecisionTreeImpl extends DecisionTree {
 		Map<String, Float> IGMap = new HashMap<String, Float>();
 
 		for(int i = 0; i < AttributeEntropy.size(); i++){
-			IGMap.put("A" + Integer.toString(i + 1), HLabel - AttributeEntropy.get(i));
+			IGMap.put(Integer.toString(i + 1), HLabel - AttributeEntropy.get(i));
 		}
 
 
@@ -248,35 +248,37 @@ public class DecisionTreeImpl extends DecisionTree {
 			String majorityLabel = MajorityLabel(examples);
 
 			// tree = new decision tree with root node A
-			DecTreeNode treeToReturn = new DecTreeNode(majorityLabel, importantAttribute, null, false);
+			DecTreeNode treeToReturn = new DecTreeNode(majorityLabel, "A" + importantAttribute, null, false);
 
 			// create subtrees for each attribute value
 
-			for(String value : attributeValues.get(importantAttribute)){
+			for(String value : attributeValues.get("A" + importantAttribute)){
 
 				// Get subset of examples with importantAttribute == value
 				List<Instance> exs = new ArrayList<Instance>();
 				for(Instance example: examples){
-					for(String exampleValue : example.attributes){
-						if(exampleValue.equals(value)){
-							exs.add(example);
-							break;
-						}
+
+					if(example.attributes.get(Integer.parseInt(importantAttribute)).equals(value)){
+						exs.add(example);
+
 					}
+
 				}
 
 				// Pass attributes minus the one being used to create children
 				List<String> childAttributes = attributes;
-				
+				for(String attribute: childAttributes){
+					System.out.println(attribute);
+				}
 				for(int i = 0; i < childAttributes.size(); i++){
-					if(childAttributes.get(i).toString().equals(importantAttribute)){
+					if(childAttributes.get(i).toString().equals("A" + importantAttribute)){
 						childAttributes.remove(i);
 					}
 				}
 				for(String attribute: childAttributes){
 					System.out.println(attribute);
 				}
-				
+
 				// Build subtree
 				DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel);
 
