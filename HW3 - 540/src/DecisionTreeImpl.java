@@ -132,8 +132,10 @@ public class DecisionTreeImpl extends DecisionTree {
 				for(int k = 0; k < labels.size(); k++){
 
 					if(labels.get(k).equals(example.label)){
+						
 						Integer freq = LabelAttributeValueMap.get(k).get(newPair);
 						LabelAttributeValueMap.get(k).put(newPair, (freq == null) ? 1 : freq + 1);
+						System.out.println("woo");
 					}
 				}
 
@@ -143,7 +145,21 @@ public class DecisionTreeImpl extends DecisionTree {
 			}
 		}
 
+		//TEST CODE//////////////////////
+		for(HashMap<AttributeValuePair, Integer> hm : LabelAttributeValueMap){
+			for (Map.Entry<AttributeValuePair, Integer> name: hm.entrySet()){
 
+				String attribute = Integer.toString(name.getKey().getAttribute());
+				String pairValue = Integer.toString(name.getKey().getValue());
+				String value = hm.get(name).toString();  
+				System.out.println(attribute + " " + pairValue + " " + value);  
+				
+
+			} 
+		}
+		//END TEST CODE////////////////
+		
+		
 		// Calculate H(Label | AttributeValue): H(Y | X = v) = Sum of -Pr(Y = yi | X = v)log2(Pr(Y = yi | X = v))
 		float HLAVSum = 0;
 
@@ -151,10 +167,11 @@ public class DecisionTreeImpl extends DecisionTree {
 		Map<Integer, Float> AttributeEntropy = new HashMap<Integer, Float>();
 		for(Map.Entry<AttributeValuePair, Integer> labelEntry: AttributeValueFreqMap.entrySet()){
 			for(int i = 0; i < LabelAttributeValueMap.size(); i++){
-				
+				AttributeValuePair newPair = new AttributeValuePair(labelEntry.getKey().getAttribute(), labelEntry.getKey().getValue());
 				float propOfYiXv = (float) 
-						(LabelAttributeValueMap.get(i).get(labelEntry.getKey())
-						/labelEntry.getValue());
+						(LabelAttributeValueMap.get(i).
+								get(newPair)
+								/labelEntry.getValue());
 				proportionsHYXv.add(propOfYiXv);	
 			}
 			HLAVSum = Entropy(proportionsHYXv);
@@ -162,19 +179,19 @@ public class DecisionTreeImpl extends DecisionTree {
 			float HYXpart = HLAVSum*Xv;
 			float HYXSum = AttributeEntropy.get(labelEntry.getKey().getAttribute());
 			AttributeEntropy.put(labelEntry.getKey().getAttribute(), (HYXSum + HYXpart));
-			
+
 		}
 
-	
+
 		Map<String, Float> IGMap = new HashMap<String, Float>();
-		
+
 		for(int i = 0; i < AttributeEntropy.size(); i++){
-			IGMap.put(Integer.toString(i), HLabel - AttributeEntropy.get(i));
+			IGMap.put("A" + Integer.toString(i), HLabel - AttributeEntropy.get(i));
 		}
 
 
 
-	/*
+		/*
 		for(String label : labels){
 			for(String attribute: attributes){
 				for(Instance example: examples){
@@ -245,211 +262,211 @@ public class DecisionTreeImpl extends DecisionTree {
 		for(Map.Entry<LabelAttributeValuePair, Float> labelAttributeEntry: HLabelAttributeValueMap.entrySet()){
 			IGMap.put(labelAttributeEntry.getKey(), (HLabelMap.get(labelAttributeEntry.getKey().getLabel()) - labelAttributeEntry.getValue()) );
 		}
-*/
+		 */
 		return IGMap;  
-	 
 
-}
 
-DecTreeNode BuildTree(List<Instance> examples, List<String> attributes, String defaultLabel){
-
-	this.attributes = attributes;
-
-	//test for all same classification
-	String unanimousLabel = "begin";
-	boolean sameLabel = true;
-	for(Instance example: examples){
-		if(!unanimousLabel.contentEquals("begin")){
-			if(!example.label.contentEquals(unanimousLabel)){
-				sameLabel = false;
-			}
-		}
-		unanimousLabel = example.label;
 	}
 
-	if(examples.isEmpty()){
-		// return terminal node with plurality value of parent example labels
-		return new DecTreeNode(defaultLabel, null, null, true);
+	DecTreeNode BuildTree(List<Instance> examples, List<String> attributes, String defaultLabel){
 
-	}else if(sameLabel){
-		// return terminal node with label shared by all examples in tree
-		return new DecTreeNode(unanimousLabel, null, null, true);
+		this.attributes = attributes;
 
-	}else if(attributes.isEmpty()){
-		// return terminal node with plurality value of current example labels
-		return new DecTreeNode(MajorityLabel(examples), null, null, true);
-
-	}else{
-		// importantAttribute = argmax for attribute a of IMPORTANCE(a, examples),
-		Map<String, Float> IGMap = InformationGain(examples);
-
-		double max = -1;
-		String importantAttribute = null;
-		for(Map.Entry<String, Float> IGEntry: IGMap.entrySet()){
-			if(IGEntry.getValue() > max){
-				importantAttribute = IGEntry.getKey();
-				max = IGEntry.getValue();
+		//test for all same classification
+		String unanimousLabel = "begin";
+		boolean sameLabel = true;
+		for(Instance example: examples){
+			if(!unanimousLabel.contentEquals("begin")){
+				if(!example.label.contentEquals(unanimousLabel)){
+					sameLabel = false;
+				}
 			}
+			unanimousLabel = example.label;
 		}
 
-		System.out.println("Attribute: " + importantAttribute);
-		// calculate majorityLabel
-		String majorityLabel = MajorityLabel(examples);
+		if(examples.isEmpty()){
+			// return terminal node with plurality value of parent example labels
+			return new DecTreeNode(defaultLabel, null, null, true);
 
-		// tree = new decision tree with root node A
-		DecTreeNode treeToReturn = new DecTreeNode(majorityLabel, importantAttribute, null, false);
+		}else if(sameLabel){
+			// return terminal node with label shared by all examples in tree
+			return new DecTreeNode(unanimousLabel, null, null, true);
 
-		// create subtrees for each attribute value
-		if(attributeValues.get(importantAttribute) != null){
-			for(String value : attributeValues.get(importantAttribute)){
+		}else if(attributes.isEmpty()){
+			// return terminal node with plurality value of current example labels
+			return new DecTreeNode(MajorityLabel(examples), null, null, true);
 
-				// Get subset of examples with importantAttribute == value
-				List<Instance> exs = new ArrayList<Instance>();
-				for(Instance example: examples){
-					for(String exampleValue : example.attributes){
-						if(exampleValue.equals(value)){
-							exs.add(example);
-							break;
+		}else{
+			// importantAttribute = argmax for attribute a of IMPORTANCE(a, examples),
+			Map<String, Float> IGMap = InformationGain(examples);
+
+			double max = -1;
+			String importantAttribute = null;
+			for(Map.Entry<String, Float> IGEntry: IGMap.entrySet()){
+				if(IGEntry.getValue() > max){
+					importantAttribute = IGEntry.getKey();
+					max = IGEntry.getValue();
+				}
+			}
+
+			System.out.println("Attribute: " + importantAttribute);
+			// calculate majorityLabel
+			String majorityLabel = MajorityLabel(examples);
+
+			// tree = new decision tree with root node A
+			DecTreeNode treeToReturn = new DecTreeNode(majorityLabel, importantAttribute, null, false);
+
+			// create subtrees for each attribute value
+			if(attributeValues.get(importantAttribute) != null){
+				for(String value : attributeValues.get(importantAttribute)){
+
+					// Get subset of examples with importantAttribute == value
+					List<Instance> exs = new ArrayList<Instance>();
+					for(Instance example: examples){
+						for(String exampleValue : example.attributes){
+							if(exampleValue.equals(value)){
+								exs.add(example);
+								break;
+							}
 						}
 					}
+
+					// Pass attributes minus the one being used to create children
+					List<String> childAttributes = attributes;
+					childAttributes.remove(importantAttribute);
+
+					// Build subtree
+					DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel);
+
+					// Add arc from tree to subtree
+					treeToReturn.addChild(childTree);
 				}
-
-				// Pass attributes minus the one being used to create children
-				List<String> childAttributes = attributes;
-				childAttributes.remove(importantAttribute);
-
-				// Build subtree
-				DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel);
-
-				// Add arc from tree to subtree
-				treeToReturn.addChild(childTree);
+				//
 			}
-			//
+			return treeToReturn;
 		}
-		return treeToReturn;
+
 	}
 
-}
+	/**
+	 * Build a decision tree given a training set then prune it using a tuning set.
+	 * 
+	 * @param train: the training set
+	 * @param tune: the tuning set
+	 */
+	DecisionTreeImpl(DataSet train, DataSet tune) {
 
-/**
- * Build a decision tree given a training set then prune it using a tuning set.
- * 
- * @param train: the training set
- * @param tune: the tuning set
- */
-DecisionTreeImpl(DataSet train, DataSet tune) {
+		this.labels = train.labels;
+		this.attributes = train.attributes;
+		this.attributeValues = train.attributeValues;
+		// TODO: add code here
 
-	this.labels = train.labels;
-	this.attributes = train.attributes;
-	this.attributeValues = train.attributeValues;
-	// TODO: add code here
+	}
 
-}
+	@Override
+	public String classify(Instance instance) {
 
-@Override
-public String classify(Instance instance) {
-
-	// TODO: add code here
-	DecTreeNode traversalNode = root;
-	while(!traversalNode.terminal){
-		for(DecTreeNode child : traversalNode.children){
-			if(child.terminal){
-				return child.label;
-			}else if(instance.attributes.contains(child.attribute)){
-				traversalNode = child;
-				break;
+		// TODO: add code here
+		DecTreeNode traversalNode = root;
+		while(!traversalNode.terminal){
+			for(DecTreeNode child : traversalNode.children){
+				if(child.terminal){
+					return child.label;
+				}else if(instance.attributes.contains(child.attribute)){
+					traversalNode = child;
+					break;
+				}
 			}
 		}
-	}
-	return traversalNode.label;
-}
-
-@Override
-public void rootInfoGain(DataSet train) {
-	this.labels = train.labels;
-	this.attributes = train.attributes;
-	this.attributeValues = train.attributeValues;
-	// TODO: add code here
-
-	Map<String, Float> IGMap = InformationGain(train.instances);
-
-	for(Map.Entry<String, Float> IGEntry: IGMap.entrySet()){
-		System.out.format("%s %.5f\n", IGEntry.getKey(), IGEntry.getValue());
+		return traversalNode.label;
 	}
 
+	@Override
+	public void rootInfoGain(DataSet train) {
+		this.labels = train.labels;
+		this.attributes = train.attributes;
+		this.attributeValues = train.attributeValues;
+		// TODO: add code here
 
-}
+		Map<String, Float> IGMap = InformationGain(train.instances);
 
-@Override
-/**
- * Print the decision tree in the specified format
- */
-public void print() {
+		for(Map.Entry<String, Float> IGEntry: IGMap.entrySet()){
+			System.out.format("%s %.5f\n", IGEntry.getKey(), IGEntry.getValue());
+		}
 
-	printTreeNode(root, null, 0);
-}
 
-/**
- * Prints the subtree of the node with each line prefixed by 4 * k spaces.
- */
-public void printTreeNode(DecTreeNode p, DecTreeNode parent, int k) {
-	StringBuilder sb = new StringBuilder();
-	for (int i = 0; i < k; i++) {
-		sb.append("    ");
 	}
-	String value;
-	if (parent == null) {
-		value = "ROOT";
-	} else {
-		int attributeValueIndex = this.getAttributeValueIndex(parent.attribute, p.parentAttributeValue);
-		value = attributeValues.get(parent.attribute).get(attributeValueIndex);
+
+	@Override
+	/**
+	 * Print the decision tree in the specified format
+	 */
+	public void print() {
+
+		printTreeNode(root, null, 0);
 	}
-	sb.append(value);
-	if (p.terminal) {
-		sb.append(" (" + p.label + ")");
-		System.out.println(sb.toString());
-	} else {
-		sb.append(" {" + p.attribute + "?}");
-		System.out.println(sb.toString());
-		for (DecTreeNode child : p.children) {
-			printTreeNode(child, p, k + 1);
+
+	/**
+	 * Prints the subtree of the node with each line prefixed by 4 * k spaces.
+	 */
+	public void printTreeNode(DecTreeNode p, DecTreeNode parent, int k) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < k; i++) {
+			sb.append("    ");
+		}
+		String value;
+		if (parent == null) {
+			value = "ROOT";
+		} else {
+			int attributeValueIndex = this.getAttributeValueIndex(parent.attribute, p.parentAttributeValue);
+			value = attributeValues.get(parent.attribute).get(attributeValueIndex);
+		}
+		sb.append(value);
+		if (p.terminal) {
+			sb.append(" (" + p.label + ")");
+			System.out.println(sb.toString());
+		} else {
+			sb.append(" {" + p.attribute + "?}");
+			System.out.println(sb.toString());
+			for (DecTreeNode child : p.children) {
+				printTreeNode(child, p, k + 1);
+			}
 		}
 	}
-}
 
-/**
- * Helper function to get the index of the label in labels list
- */
-private int getLabelIndex(String label) {
-	for (int i = 0; i < this.labels.size(); i++) {
-		if (label.equals(this.labels.get(i))) {
-			return i;
+	/**
+	 * Helper function to get the index of the label in labels list
+	 */
+	private int getLabelIndex(String label) {
+		for (int i = 0; i < this.labels.size(); i++) {
+			if (label.equals(this.labels.get(i))) {
+				return i;
+			}
 		}
+		return -1;
 	}
-	return -1;
-}
 
-/**
- * Helper function to get the index of the attribute in attributes list
- */
-private int getAttributeIndex(String attr) {
-	for (int i = 0; i < this.attributes.size(); i++) {
-		if (attr.equals(this.attributes.get(i))) {
-			return i;
+	/**
+	 * Helper function to get the index of the attribute in attributes list
+	 */
+	private int getAttributeIndex(String attr) {
+		for (int i = 0; i < this.attributes.size(); i++) {
+			if (attr.equals(this.attributes.get(i))) {
+				return i;
+			}
 		}
+		return -1;
 	}
-	return -1;
-}
 
-/**
- * Helper function to get the index of the attributeValue in the list for the attribute key in the attributeValues map
- */
-private int getAttributeValueIndex(String attr, String value) {
-	for (int i = 0; i < attributeValues.get(attr).size(); i++) {
-		if (value.equals(attributeValues.get(attr).get(i))) {
-			return i;
+	/**
+	 * Helper function to get the index of the attributeValue in the list for the attribute key in the attributeValues map
+	 */
+	private int getAttributeValueIndex(String attr, String value) {
+		for (int i = 0; i < attributeValues.get(attr).size(); i++) {
+			if (value.equals(attributeValues.get(attr).get(i))) {
+				return i;
+			}
 		}
+		return -1;
 	}
-	return -1;
-}
 }
