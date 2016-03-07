@@ -44,12 +44,6 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.attributeValues = train.attributeValues;
 		// TODO: add code here
 
-		/*
-		for(String attribute: attributes){
-			System.out.println("attribute: " + attribute + " value: " + attributeValues.get(attribute));
-		}
-		 */
-
 		String majorityLabel = MajorityLabel(train.instances);
 		this.root = BuildTree(train.instances, train.attributes, majorityLabel);
 
@@ -122,9 +116,9 @@ public class DecisionTreeImpl extends DecisionTree {
 
 
 		for(Instance example : examples){
-			for(int i = 0; i < example.attributes.size(); i++){
+			for(int i = 1; i <= example.attributes.size(); i++){
 
-				AttributeValuePair newPair = new AttributeValuePair(i, Integer.parseInt(example.attributes.get(i)));
+				AttributeValuePair newPair = new AttributeValuePair(i, Integer.parseInt(example.attributes.get(i-1)));
 
 				for(int k = 0; k < labels.size(); k++){
 					if(labels.get(k).equals(example.label)){
@@ -137,7 +131,7 @@ public class DecisionTreeImpl extends DecisionTree {
 				}
 
 				// Freq of v given X
-				Integer freq = AttributeValueFreqMap.get(i);
+				Integer freq = AttributeValueFreqMap.get(newPair);
 				AttributeValueFreqMap.put(newPair, (freq == null) ? 1 : freq + 1);
 			}
 		}
@@ -159,41 +153,66 @@ public class DecisionTreeImpl extends DecisionTree {
 		 */
 
 		// Calculate H(Label | AttributeValue): H(Y | X = v) = Sum of -Pr(Y = yi | X = v)log2(Pr(Y = yi | X = v))
-		float HLAVSum = 0;
 
-		List<Float> proportionsHYXv = new ArrayList<Float>();
+
+
 		Map<Integer, Float> AttributeEntropy = new HashMap<Integer, Float>();
+		for(String attribute: attributes){
+			System.out.println(attribute);
+		}
+
 
 		for(Map.Entry<AttributeValuePair, Integer> labelEntry: AttributeValueFreqMap.entrySet()){
-			AttributeValuePair newPair = new AttributeValuePair(labelEntry.getKey().getAttribute(), labelEntry.getKey().getValue());
-			for(int i = 0; i < LabelAttributeValueMap.size(); i++){
-				if(LabelAttributeValueMap.get(i).containsKey(newPair)){
-					float propOfYiXv = (float) 
-							(LabelAttributeValueMap.get(i).get(newPair)
-									/labelEntry.getValue());
-					proportionsHYXv.add(propOfYiXv);	
+			if(attributes.contains("A" + labelEntry.getKey().getAttribute())){
+				//System.out.println(labelEntry.getKey().getAttribute());
+				AttributeValuePair newPair = labelEntry.getKey();
+				float HLAVSum = 0;
+				List<Float> proportionsHYXv = new ArrayList<Float>();
+				//new AttributeValuePair(labelEntry.getKey().getAttribute(), labelEntry.getKey().getValue());
+				for(int i = 0; i < LabelAttributeValueMap.size(); i++){
+					if(LabelAttributeValueMap.get(i).containsKey(newPair)){
+						//System.out.println("value" + LabelAttributeValueMap.get(i).get(newPair));
+						//System.out.println("entry" + labelEntry.getValue());
+						float propOfYiXv = (float) 
+								(LabelAttributeValueMap.get(i).get(newPair)/(float)labelEntry.getValue());
+						//System.out.println("prop" + propOfYiXv);
+						proportionsHYXv.add(propOfYiXv);	
+					}
 				}
+
+				if(AttributeEntropy.get(newPair.getAttribute()) == null){
+					AttributeEntropy.put(newPair.getAttribute(), (float) 0);
+					System.out.println(newPair.getAttribute());
+				}
+				//System.out.println("yo " + proportionsHYXv.size());
+				HLAVSum = Entropy(proportionsHYXv);
+				//System.out.println("HLAV " + HLAVSum);
+				float Xv = (float) labelEntry.getValue()/ (float) examples.size();
+				float HYXpart = HLAVSum*Xv;
+				//System.out.println("HYX " + HYXpart);
+				float HYXSum = AttributeEntropy.get(
+						Integer.valueOf(newPair.getAttribute()));
+
+				//System.out.println("attr" + Integer.valueOf(newPair.getAttribute()));
+
+				AttributeEntropy.put(Integer.valueOf(newPair.getAttribute()),
+						(HYXSum == 0) ? (HYXpart) : (HYXSum + HYXpart));
 			}
-			if(AttributeEntropy.get(newPair.getAttribute()) == null){
-				AttributeEntropy.put(newPair.getAttribute(), (float) 0);
-			}
-			HLAVSum = Entropy(proportionsHYXv);
-			float Xv = labelEntry.getValue()/examples.size();
-			float HYXpart = HLAVSum*Xv;
-			float HYXSum = AttributeEntropy.get(
-					Integer.valueOf(newPair.getAttribute()));
-			AttributeEntropy.put(Integer.valueOf(newPair.getAttribute()),
-					(HYXSum == 0) ? (HYXpart) : (HYXSum + HYXpart));
 
 		}
 
 
 		Map<String, Float> IGMap = new HashMap<String, Float>();
-
+		//System.out.println("attributesize: " + AttributeEntropy.size());
+		for(Map.Entry<Integer, Float> entry : AttributeEntropy.entrySet()){
+			IGMap.put(Integer.toString(entry.getKey()), HLabel - entry.getValue());
+			//	System.out.println(entry.getValue());
+		}
+		/*
 		for(int i = 0; i < AttributeEntropy.size(); i++){
 			IGMap.put(Integer.toString(i + 1), HLabel - AttributeEntropy.get(i));
 		}
-
+		 */
 
 
 
@@ -205,6 +224,14 @@ public class DecisionTreeImpl extends DecisionTree {
 	DecTreeNode BuildTree(List<Instance> examples, List<String> attributes, String defaultLabel){
 
 		this.attributes = attributes;
+
+		//TEST
+		System.out.print("parent: ");
+		for(String attribute: attributes){
+			System.out.print(attribute);
+		}
+		System.out.println("");
+		//TEST
 
 		//test for all same classification
 		String unanimousLabel = "begin";
@@ -256,9 +283,10 @@ public class DecisionTreeImpl extends DecisionTree {
 
 				// Get subset of examples with importantAttribute == value
 				List<Instance> exs = new ArrayList<Instance>();
+
 				for(Instance example: examples){
 
-					if(example.attributes.get(Integer.parseInt(importantAttribute)).equals(value)){
+					if(example.attributes.get(getAttributeIndex(importantAttribute)).equals(value)){
 						exs.add(example);
 
 					}
@@ -275,9 +303,16 @@ public class DecisionTreeImpl extends DecisionTree {
 						childAttributes.remove(i);
 					}
 				}
+
+				//TEST
+				System.out.print("children: ");
 				for(String attribute: childAttributes){
-					System.out.println(attribute);
+					System.out.print(attribute);
 				}
+				System.out.println("");
+				//TEST
+
+
 
 				// Build subtree
 				DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel);
@@ -285,6 +320,7 @@ public class DecisionTreeImpl extends DecisionTree {
 				// Add arc from tree to subtree
 				treeToReturn.addChild(childTree);
 			}
+
 			//
 
 			return treeToReturn;
@@ -333,15 +369,11 @@ public class DecisionTreeImpl extends DecisionTree {
 		// TODO: add code here
 
 		Map<String, Float> IGMap = InformationGain(train.instances);
-		List<StringFloatPair> SFPList = new ArrayList<StringFloatPair>();
+
 
 		for(Map.Entry<String, Float> IGEntry: IGMap.entrySet()){
-			StringFloatPair SFP = new StringFloatPair(IGEntry.getKey(), IGEntry.getValue());
-			SFPList.add(SFP);
+			System.out.format("%s %.5f\n", IGEntry.getKey(), IGEntry.getValue());
 		}
-
-		//SFPList.
-		//System.out.format("%s %.5f\n", IGEntry.getKey(), IGEntry.getValue());
 
 	}
 
