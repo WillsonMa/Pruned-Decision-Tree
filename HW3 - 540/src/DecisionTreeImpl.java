@@ -291,19 +291,36 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.attributeValues = train.attributeValues;
 		String majorityLabel = MajorityLabel(train.instances);
 		this.root = BuildTree(train.instances, train.attributes, majorityLabel, null);
+		
+		// Initialize non-leaf node list to use for pruning
 		nonLeafNodes = new ArrayList<DecTreeNode>();
+		
+		// Flattens all non-leaf nodes into a list for easy traversal
 		flattenTree(root);
+		
 		Prune(this.root, tune);
 
 	}
 
+	/**
+	 * Uses greedy iterative pruning method to test if removal of each non-leaf
+	 * tree node increases the accuracy of the decision tree.
+	 * 
+	 * @param root : root of the unpruned tree
+	 * @param tune : the tuning set
+	 */
 	void Prune(DecTreeNode root, DataSet tune){
-
 		for(DecTreeNode testNode : nonLeafNodes){
+			// Calculate the accuracy with the current node's subtree
 			double accuracyWith = accuracy(tune);
 			testNode.terminal = true;
+			
+			// Calculate the accuracy without the current node's subtree
 			double accuracyWithout = accuracy(tune);
 			testNode.terminal = false;
+			
+			// If the accuracy without the subtree is greater, then remove the
+			// subtree
 			if(accuracyWithout >= accuracyWith){
 				testNode.terminal = true;
 			}
@@ -312,26 +329,35 @@ public class DecisionTreeImpl extends DecisionTree {
 
 	private List<DecTreeNode> nonLeafNodes;
 
-	/*
+	/**
+	 * 
 	 * Makes a list out of the tree
+	 * 
+	 * @param root : The current node being expanded
 	 */
 	void flattenTree(DecTreeNode root){
+		// If the current node isn't a leaf, add it to the list of nonLeafs
 		if(!root.terminal) nonLeafNodes.add(root);
 		else return;
+		// Expand this tree nodes children and examine them
 		for(DecTreeNode node : root.children){
 			flattenTree(node);
 		}
 	}
 
-	/*
-	 * Checks the accuracy of the decision tree
+	/**
+	 * 
+	 * Checks the accuracy of the decision tree given a tuning set
+	 * 
+	 * @param tune : The tuning set
 	 */
 	private double accuracy(DataSet tune){
-		int correctCount = 0;
+		int correctCount = 0;			// Count of correct classifications
 		for(Instance tuner : tune.instances){
 			// If classified label equals tune label increment correct count
 			if(classify(tuner).equals(tuner.label)) correctCount++;
 		}
+		// Return the ratio of correct classifications to total classifications
 		return ((double)correctCount) / ((double)tune.instances.size());
 	}
 
