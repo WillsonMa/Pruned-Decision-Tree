@@ -48,8 +48,9 @@ public class DecisionTreeImpl extends DecisionTree {
 
 	}
 
-	/*
+	/**
 	 * Calculates and returns most frequent label in a list of examples
+	 * @param : list of examples
 	 */
 	String MajorityLabel(List<Instance> examples){
 
@@ -75,9 +76,9 @@ public class DecisionTreeImpl extends DecisionTree {
 		return mostFrequent;
 	}
 
-	/*
+	/**
 	 * Calculates and returns H(p) = Sum for i = 0 to p.size: -pi log2 pi
-
+	 *
 	 */
 
 	float Entropy(List<Float> proportions){
@@ -91,9 +92,11 @@ public class DecisionTreeImpl extends DecisionTree {
 		return entropy;
 	}
 
-	/*
+	/**
 	 * Calculates the information gain for all attributes given a list of examples, and 
 	 * returns them as a map of attributes to the float value of the gain
+	 * 
+	 * @param : list of examples
 	 */
 	Map<String, Float> InformationGain(List<Instance> examples){
 
@@ -199,6 +202,14 @@ public class DecisionTreeImpl extends DecisionTree {
 	}
 
 
+	/**
+	 * Recursively builds decision tree with subsets of the full tree
+	 * 
+	 * @param examples : remaining examples in the subtree
+	 * @param attributes : remaining unused attributes in subtree
+	 * @param defaultLabel : majority label of parent examples
+	 * @param parentAttribute : the attribute from which the current subtree is rooted
+	 */
 	DecTreeNode BuildTree(List<Instance> examples, List<String> attributes, String defaultLabel, String parentAttribute){
 
 		//test for all same classification
