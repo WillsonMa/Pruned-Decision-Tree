@@ -279,11 +279,50 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.labels = train.labels;
 		this.attributes = train.attributes;
 		this.attributeValues = train.attributeValues;
-		// TODO: add code here
-
 		String majorityLabel = MajorityLabel(train.instances);
 		this.root = BuildTree(train.instances, train.attributes, majorityLabel, null);
+		nonLeafNodes = new ArrayList<DecTreeNode>();
+		flattenTree(root);
+		Prune(this.root, tune);
 		
+	}
+	
+	void Prune(DecTreeNode root, DataSet tune){
+
+		for(DecTreeNode testNode : nonLeafNodes){
+			double accuracyWith = accuracy(tune);
+			testNode.terminal = true;
+			double accuracyWithout = accuracy(tune);
+			testNode.terminal = false;
+			if(accuracyWithout >= accuracyWith){
+				testNode.terminal = true;
+			}
+		}
+	}
+	
+	private List<DecTreeNode> nonLeafNodes;
+	
+	/*
+	 * Makes a list out of the tree
+	 */
+	void flattenTree(DecTreeNode root){
+		if(!root.terminal) nonLeafNodes.add(root);
+		else return;
+		for(DecTreeNode node : root.children){
+			flattenTree(node);
+		}
+	}
+	
+	/*
+	 * Checks the accuracy of the decision tree
+	 */
+	private double accuracy(DataSet tune){
+		int correctCount = 0;
+		for(Instance tuner : tune.instances){
+			// If classified label equals tune label increment correct count
+			if(classify(tuner).equals(tuner.label)) correctCount++;
+		}
+		return ((double)correctCount) / ((double)tune.instances.size());
 	}
 
 	@Override
