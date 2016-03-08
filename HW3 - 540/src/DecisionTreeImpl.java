@@ -42,17 +42,20 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.labels = train.labels;
 		this.attributes = train.attributes;
 		this.attributeValues = train.attributeValues;
-		// TODO: add code here
 
 		String majorityLabel = MajorityLabel(train.instances);
 		this.root = BuildTree(train.instances, train.attributes, majorityLabel, null);
 
 	}
 
+	/*
+	 * Calculates and returns most frequent label in a list of examples
+	 */
 	String MajorityLabel(List<Instance> examples){
 
 		Map<String, Integer> labelMap = new HashMap<String, Integer>();
 
+		// create map of labels to frequency
 		for(Instance example : examples){
 
 			Integer freq = labelMap.get(example.label);
@@ -60,6 +63,7 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		}
 
+		// find label with most frequency
 		int max = -1;
 		String mostFrequent = null;
 		for(Map.Entry<String, Integer> labelEntry: labelMap.entrySet()){
@@ -71,21 +75,29 @@ public class DecisionTreeImpl extends DecisionTree {
 		return mostFrequent;
 	}
 
+	/*
+	 * Calculates and returns H(p) = Sum for i = 0 to p.size: -pi log2 pi
+
+	 */
+
 	float Entropy(List<Float> proportions){
-		
+
 		float entropy = 0;
-		
+
 		for(float proportion : proportions){
 			entropy += (-proportion)*Math.log(proportion)/Math.log(2);
 		}
 
 		return entropy;
 	}
-	
+
+	/*
+	 * Calculates the information gain for all attributes given a list of examples, and 
+	 * returns them as a map of attributes to the float value of the gain
+	 */
 	Map<String, Float> InformationGain(List<Instance> examples){
 
 		// get frequency of all labels (R, L, B)
-
 		Map<String, Integer> labelFreqMap = new HashMap<String, Integer>();
 		for(Instance example: examples){
 			Integer freq = labelFreqMap.get(example.label);
@@ -140,6 +152,8 @@ public class DecisionTreeImpl extends DecisionTree {
 		for(Map.Entry<AttributeValuePair, Integer> labelEntry: AttributeValueFreqMap.entrySet()){
 			if(attributes.contains(labelEntry.getKey().getAttribute())){
 				AttributeValuePair newPair = labelEntry.getKey();
+				
+				// Get the proportions Pr(Y = yi | X = v)
 				float HLAVSum = 0;
 				List<Float> proportionsHYXv = new ArrayList<Float>();
 				for(int i = 0; i < LabelAttributeValueMap.size(); i++){
@@ -155,19 +169,27 @@ public class DecisionTreeImpl extends DecisionTree {
 				if(AttributeEntropy.get(newPair.getAttribute()) == null){
 					AttributeEntropy.put(newPair.getAttribute(), (float) 0);
 				}
-				
+
+				// Sum the proportions Pr(Y = yi | X = v)
 				HLAVSum = Entropy(proportionsHYXv);
+				
+				// Pr(X = v)
 				float Xv = (float) labelEntry.getValue()/ (float) examples.size();
+				// Pr(X = v) * H(Y | X = v)
 				float HYXpart = HLAVSum*Xv;
+				
+				// H(Y | X)
 				float HYXSum = AttributeEntropy.get(newPair.getAttribute());
 
-
+				// Successive summations by polling 
+				//the map value and adding the new part
 				AttributeEntropy.put(newPair.getAttribute(),
 						(HYXSum == 0) ? (HYXpart) : (HYXSum + HYXpart));
 			}
 
 		}
 
+		// Calculates and stores the final information gain
 		Map<String, Float> IGMap = new HashMap<String, Float>();
 		for(Map.Entry<String, Float> entry : AttributeEntropy.entrySet()){
 			IGMap.put(entry.getKey(), HLabel - entry.getValue());
@@ -175,6 +197,7 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		return IGMap;  
 	}
+
 
 	DecTreeNode BuildTree(List<Instance> examples, List<String> attributes, String defaultLabel, String parentAttribute){
 
@@ -192,17 +215,14 @@ public class DecisionTreeImpl extends DecisionTree {
 
 		if(examples.isEmpty()){
 			// return terminal node with plurality value of parent example labels
-			//System.out.println("leaf1");
 			return new DecTreeNode(defaultLabel, null, parentAttribute, true);
 
 		}else if(sameLabel){
 			// return terminal node with label shared by all examples in tree
-			//System.out.println("leaf2");
 			return new DecTreeNode(unanimousLabel, null, parentAttribute, true);
 
 		}else if(attributes.isEmpty()){
 			// return terminal node with plurality value of current example labels
-			//System.out.println("leaf3");
 			return new DecTreeNode(MajorityLabel(examples), null, parentAttribute, true);
 
 		}else{
@@ -220,7 +240,6 @@ public class DecisionTreeImpl extends DecisionTree {
 				}
 			}
 
-			//System.out.println("Attribute: " + importantAttribute);
 			// calculate majorityLabel
 			String majorityLabel = MajorityLabel(examples);
 
@@ -228,44 +247,35 @@ public class DecisionTreeImpl extends DecisionTree {
 			DecTreeNode treeToReturn = new DecTreeNode(majorityLabel, importantAttribute, parentAttribute, false);
 
 			// create subtrees for each attribute value
+			for(String value : attributeValues.get(importantAttribute)){
 
-			if(getAttributeIndex(importantAttribute) != -1){
-				for(String value : attributeValues.get(importantAttribute)){
+				// Get subset of examples with importantAttribute == value
+				List<Instance> exs = new ArrayList<Instance>();
 
-
-					// Get subset of examples with importantAttribute == value
-					List<Instance> exs = new ArrayList<Instance>();
-
-					for(Instance example: examples){
-						if(example.attributes.get(getAttributeIndex(importantAttribute)).equals(value)){
-							exs.add(example);
-						}
+				for(Instance example: examples){
+					if(example.attributes.get(getAttributeIndex(importantAttribute)).equals(value)){
+						exs.add(example);
 					}
-
-
-					// Pass attributes minus the one being used to create children
-					List<String> childAttributes = new ArrayList<String>();
-
-					for(String attribute: attributes){
-						if(!attribute.equals(importantAttribute)){
-							childAttributes.add(attribute);
-						}
-					}
-
-
-					// Build subtree
-					DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel, value);
-
-					// Add arc from tree to subtree
-					treeToReturn.addChild(childTree);
 				}
 
+				// Pass attributes minus the one being used to create children
+				List<String> childAttributes = new ArrayList<String>();
+
+				for(String attribute: attributes){
+					if(!attribute.equals(importantAttribute)){
+						childAttributes.add(attribute);
+					}
+				}
+
+				// Build subtree
+				DecTreeNode childTree = BuildTree(exs, childAttributes, majorityLabel, value);
+
+				// Add arc from tree to subtree
+				treeToReturn.addChild(childTree);
 			}
-			//
 
 			return treeToReturn;
 		}
-
 	}
 
 	/**
@@ -284,9 +294,9 @@ public class DecisionTreeImpl extends DecisionTree {
 		nonLeafNodes = new ArrayList<DecTreeNode>();
 		flattenTree(root);
 		Prune(this.root, tune);
-		
+
 	}
-	
+
 	void Prune(DecTreeNode root, DataSet tune){
 
 		for(DecTreeNode testNode : nonLeafNodes){
@@ -299,9 +309,9 @@ public class DecisionTreeImpl extends DecisionTree {
 			}
 		}
 	}
-	
+
 	private List<DecTreeNode> nonLeafNodes;
-	
+
 	/*
 	 * Makes a list out of the tree
 	 */
@@ -312,7 +322,7 @@ public class DecisionTreeImpl extends DecisionTree {
 			flattenTree(node);
 		}
 	}
-	
+
 	/*
 	 * Checks the accuracy of the decision tree
 	 */
@@ -327,22 +337,11 @@ public class DecisionTreeImpl extends DecisionTree {
 
 	@Override
 	public String classify(Instance instance) {
-		List<String> classifyAttributes = new ArrayList<String>();
-		for(String attribute: classifyAttributes){
-			classifyAttributes.add(attribute);
-		}
-		
-		// TODO: add code here
+
 		DecTreeNode traversalNode = root;
 		while(!traversalNode.terminal){
 			for(DecTreeNode child : traversalNode.children){
-				/*
-				if(child.terminal){
-					return child.label;
-				}else 
-					*/
-					if(instance.attributes.get(getAttributeIndex(traversalNode.attribute)).equals(child.parentAttributeValue)){
-					//classifyAttributes.remove(getAttributeIndex(traversalNode.attribute));
+				if(instance.attributes.get(getAttributeIndex(traversalNode.attribute)).equals(child.parentAttributeValue)){
 					traversalNode = child;
 					break;
 				}
@@ -356,11 +355,9 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.labels = train.labels;
 		this.attributes = train.attributes;
 		this.attributeValues = train.attributeValues;
-		// TODO: add code here
 
 		Map<String, Float> IGMap = InformationGain(train.instances);
-
-
+		
 		for(int i = 0; i < IGMap.size(); i++){
 			IGMap.get(attributes.get(i));
 			System.out.format("%s %.5f\n", attributes.get(i), IGMap.get(attributes.get(i)));
@@ -403,7 +400,7 @@ public class DecisionTreeImpl extends DecisionTree {
 			sb.append(" {" + p.attribute + "?}");
 			System.out.println(sb.toString());
 			for (DecTreeNode child : p.children) {
-				
+
 				printTreeNode(child, p, k + 1);
 			}
 		}

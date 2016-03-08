@@ -1,3 +1,9 @@
+/*
+ * Used for storing attributes (A1, A2, A3, or A4) with the value they
+ * hold for a particular example
+ * 
+ */
+
 public class AttributeValuePair {
 
 	private int value;
