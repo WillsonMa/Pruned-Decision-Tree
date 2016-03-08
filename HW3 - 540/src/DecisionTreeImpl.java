@@ -281,6 +281,9 @@ public class DecisionTreeImpl extends DecisionTree {
 		this.attributeValues = train.attributeValues;
 		// TODO: add code here
 
+		String majorityLabel = MajorityLabel(train.instances);
+		this.root = BuildTree(train.instances, train.attributes, majorityLabel, null);
+		
 	}
 
 	@Override
@@ -294,11 +297,13 @@ public class DecisionTreeImpl extends DecisionTree {
 		DecTreeNode traversalNode = root;
 		while(!traversalNode.terminal){
 			for(DecTreeNode child : traversalNode.children){
-
+				/*
 				if(child.terminal){
 					return child.label;
-				}else if(classifyAttributes.get(getAttributeIndex(traversalNode.attribute)).equals(child.parentAttributeValue)){
-					classifyAttributes.remove(getAttributeIndex(traversalNode.attribute));
+				}else 
+					*/
+					if(instance.attributes.get(getAttributeIndex(traversalNode.attribute)).equals(child.parentAttributeValue)){
+					//classifyAttributes.remove(getAttributeIndex(traversalNode.attribute));
 					traversalNode = child;
 					break;
 				}
