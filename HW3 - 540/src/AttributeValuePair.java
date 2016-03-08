@@ -1,8 +1,8 @@
 public class AttributeValuePair {
 
 	private int value;
-	private int attribute;
-	AttributeValuePair(int attribute, int value){
+	private String attribute;
+	AttributeValuePair(String attribute, int value){
 		this.value = value;
 		this.attribute = attribute;
 	}
@@ -11,7 +11,7 @@ public class AttributeValuePair {
 		return this.value;
 	}
 	
-	int getAttribute(){
+	String getAttribute(){
 		return this.attribute;
 	}
 	
@@ -19,7 +19,7 @@ public class AttributeValuePair {
 	public int hashCode(){
 		int hash = 1;
 		hash = hash * 17 + value;
-		hash = hash * 31 + 3*attribute;
+		hash = hash * 31 + 3*attribute.hashCode();
 		return hash;
 	}
 	
@@ -43,6 +43,6 @@ public class AttributeValuePair {
          
         // Compare the data members and return accordingly 
         return Double.compare(value, c.value) == 0
-                && Double.compare(attribute, c.attribute) == 0;
+                && attribute.equals(c.attribute);
     }
 }
